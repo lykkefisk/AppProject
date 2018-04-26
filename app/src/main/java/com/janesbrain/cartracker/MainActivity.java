@@ -2,6 +2,7 @@ package com.janesbrain.cartracker;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,8 +12,12 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.location.LocationManager;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -22,9 +27,22 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Toast;
 
+import com.facebook.stetho.Stetho;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.janesbrain.cartracker.database.AutoRoom;
+import com.janesbrain.cartracker.model.AutoLocation;
 import com.janesbrain.cartracker.model.ParkingData;
+import com.janesbrain.cartracker.model.absLocation;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     Button parkButton;
     Button findButton;
     Button recentButton;
+    ListView recentListView;
+    //private String lastUpdated;
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
 
@@ -40,6 +60,11 @@ public class MainActivity extends AppCompatActivity {
     public ParkingData parkingData;
     private static final String TAG = "MAIN_ACTIVITY";
     private LocationManager locationMng;
+    private ListViewAdaptor mAdapter;
+    private List<absLocation> locationList;
+    FusedLocationProviderClient mFusedLocationClient;
+    private AutoRoom autoRoom;
+
 
     //For background service
     private long task_time = 4*1000; //4 ms
@@ -72,14 +97,29 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d(TAG, "onCreate is called");
 
+         /* Stetho initialization - allows for debugging features in Chrome browser
+           See http://facebook.github.io/stetho/ for details
+           1) Open chrome://inspect/ in a Chrome browse
+           2) select 'inspect' on your app under the specific device/emulator
+           3) select resources tab
+           4) browse database tables under Web SQL
+         */
+        Stetho.initialize(Stetho.newInitializerBuilder(this)
+                .enableDumpapp(
+                        Stetho.defaultDumperPluginsProvider(this))
+                .enableWebKitInspector(
+                        Stetho.defaultInspectorModulesProvider(this))
+                .build());
+        /* end Stethos */
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
         //Get the data through Shareds prefrences
         final SharedPreferences SP = getApplicationContext().getSharedPreferences("PARKING", 0);
-
-
 
         parkButton = (Button) findViewById(R.id.parkButton);
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
+
 
         checkPermission();
 
@@ -87,23 +127,26 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //TODO Save the current position (auto or manual address) to database
-                Toast.makeText(MainActivity.this, "Your parking data has been saved!", Toast.LENGTH_LONG).show();
+               // tryGetCurrentLocation();
+                //TODO Save to database
+
             }
         });
 
         findButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!mBound) {bindService(new Intent(MainActivity.this, CarService.class), mConnection, BIND_AUTO_CREATE);}
+                if (mBound) {
+                Log.d(TAG, "Bound - findButton");
 
-                    Log.d(TAG, "Bound - findButton");
-                    //Makes a dialog box
-                    findDialog = new Dialog(MainActivity.this);
-                    findDialog.setTitle("Find your car");
-                    findDialog.setContentView(R.layout.find_car);
-                    findDialog.show();
-                    //TODO Find object with the saved (last saved) position, and show on map
+                //Makes a dialog box
+                findDialog = new Dialog(MainActivity.this);
+                findDialog.setTitle("Find your car");
+                findDialog.setContentView(R.layout.find_car);
+                findDialog.show();
+                //TODO Find object with the saved (last saved) position, and show on map
             }
+        }
         });
 
         recentButton.setOnClickListener(new View.OnClickListener() {
@@ -111,16 +154,101 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
 
-                    //Makes a dialog box
-                    recentDialog = new Dialog(MainActivity.this);
+                //Makes a dialog box
+                recentDialog = new Dialog(MainActivity.this);
                 recentDialog.setTitle("Recent parked location");
                 recentDialog.setContentView(R.layout.recent_list);
+                recentListView = (ListView) findViewById(R.id.recentListView);
+
+                recentListView.setEnabled(true);
+
+                mAdapter = new ListViewAdaptor(MainActivity.this, locationList);
+                recentListView.setAdapter(mAdapter);
+
                 recentDialog.show();
                 //TODO Show list with recent parked places (data from DB)
                 //TODO Back button
             }
         });
 
+    }
+
+    private void createDataBase(){
+        //Database for the auto generated address from lat and long
+        //Add the database (WRAP IN BACKGROUND THREAD) final because it is accessed from an inner class
+        final AutoRoom autoRoom = Room.databaseBuilder(getApplicationContext(), AutoRoom.class, "production")
+                .allowMainThreadQueries() //allow the database to read/write in the main UI thread (not good)
+                .fallbackToDestructiveMigration()
+                .build();
+
+    }
+
+    private void tryGetCurrentLocation(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location l) {
+
+                updateLocation(l);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, e.getMessage());
+            }
+        });
+
+    }
+
+    private void updateLocation(Location location) {
+        if(location != null) {
+            double longitude = location.getLongitude();
+            double latitude = location.getLatitude();
+
+            //From Kasper via mail
+            String a = "";
+            Geocoder coder = new Geocoder(this);
+
+            List<Address>addresses = null;
+            try {
+                addresses = coder.getFromLocation(latitude, longitude, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if(addresses!=null && addresses.size()>0){
+                Address address = addresses.get(0);
+                for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
+                    a += address.getAddressLine(i) + "\n";
+                }
+                a+= address.getCountryName();
+
+                //Specifies the lastupdated (Date/Time)
+                //https://stackoverflow.com/questions/907170/java-getminutes-and-gethours
+                String lastUpdated;
+                Calendar timeNow = Calendar.getInstance();
+                int hour = timeNow.get(Calendar.HOUR_OF_DAY);
+                int minut = timeNow.get(Calendar.MINUTE);
+                int sec = timeNow.get(Calendar.SECOND);
+                int date = timeNow.get(Calendar.DATE);
+                int month = timeNow.get(Calendar.MONTH)+1;
+                int year = timeNow.get(Calendar.YEAR);
+                lastUpdated = date + "-" + month + "-" + year + " " + hour + ":" + minut + ":" + sec;
+
+                AutoLocation autoLocation = new AutoLocation(a, latitude, longitude, lastUpdated);
+                autoRoom.autoLocationDao().insertAll(autoLocation);
+
+                Toast.makeText(this, "Your parking data has been saved. \n" +"\n Address: \n" + a, Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     //Copied from ArnieExercizeFinder

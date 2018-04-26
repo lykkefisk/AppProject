@@ -7,5 +7,5 @@ import com.janesbrain.cartracker.model.AutoLocation;
 
 @Database(entities =  {AutoLocation.class}, version = 1)
 public abstract class AutoRoom extends RoomDatabase {
-    public abstract AutoLocationDao autoPositionDao();
+    public abstract AutoLocationDao autoLocationDao();
 }
