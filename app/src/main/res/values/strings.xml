@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">CarTracker</string>
+    <string name="findButton">Find</string>
+    <string name="parkButton">Park</string>
+    <string name="recentButton">Recent</string>
+
+    <string name="latTextView">Lat</string>
+    <string name="longTextView">Long</string>
+    <string name="latitude">Latitude:</string>
+    <string name="longitude">Longitude:</string>
+    <string name="saveButton">Save Address</string>
+    <string name="address">Adress:</string>
+    <string name="adressEditText">Enter your Address</string>
+    <string name="timeStampTextView">Date/Time</string>
+    <string name="noEditText">Enter No.</string>
+    <string name="no">No.</string>
+    <string name="zipEditText">Enter Zipcode</string>
+    <string name="zip">Zipcode:</string>
+    <string name="city">City:</string>
+    <string name="cityEditText">Enter City</string>
+    <string name="country">Country:</string>
+    <string name="countryEditText">Enter Country</string>
+    <string name="addressLineTextView">Auto address</string>
+    <string name="editButton">Edit Address</string>
+    <string name="cancelButton">Cancel</string>
+    <string name="currentAddressTextView">Current Address:</string>
+
+
+    <string name="startButton">Start Tracking</string>
+    <string name="stopButton">Stop Tracking</string>
+    <string name="locationTextView" />
+    <string name="google_package">com.google.android.apps.maps</string>
+
+    <string name="service1">A started service that runs in the background</string>
+    <string name="service2">A bound service - that activities can bind to</string>
+    <string name="service3">An intent service for handling tasks</string>
+
+    <string name="err_bg_service_result">ERROR: could not retrieve result</string>
+    <string name="lbl_bg_service">Background Service:</string>
+    <string name="lbl_bound_service">Bound Service:</string>
+    <string name="updatedTextView">Last updated:</string>
+
+</resources>
