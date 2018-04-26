@@ -17,7 +17,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
-        android:text="@string/parkButton"
+        android:text="@string/btnSave"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/findButton"
         app:layout_constraintHorizontal_bias="0.166"
@@ -30,28 +30,28 @@
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginEnd="36dp"
-        android:layout_marginRight="36dp"
+        android:layout_marginEnd="228dp"
+        android:layout_marginRight="228dp"
         android:layout_marginTop="8dp"
         android:text="@string/findButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/recentButton"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.944" />
+        app:layout_constraintVertical_bias="0.943" />
 
     <Button
         android:id="@+id/recentButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginRight="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
         android:layout_marginTop="8dp"
         android:text="@string/recentButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/settingsButton"
-        app:layout_constraintVertical_bias="0.936" />
+        app:layout_constraintVertical_bias="0.925" />
 
     <ImageButton
         android:id="@+id/settingsButton"
@@ -82,10 +82,10 @@
         android:layout_marginStart="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.065"
+        app:layout_constraintHorizontal_bias="0.024"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.549"
+        app:layout_constraintVertical_bias="0.01"
         app:srcCompat="@drawable/mapicon" />
 
 </android.support.constraint.ConstraintLayout>

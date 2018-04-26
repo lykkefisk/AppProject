@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -47,9 +48,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     //Declare UI widgets
-    Button parkButton;
+    ImageButton settingButton;
     Button findButton;
     Button recentButton;
+    Button parkButton;
     ListView recentListView;
     //private String lastUpdated;
 
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         //Get the data through Shareds prefrences
         final SharedPreferences SP = getApplicationContext().getSharedPreferences("PARKING", 0);
 
+        settingButton = (ImageButton) findViewById(R.id.settingsButton);
         parkButton = (Button) findViewById(R.id.parkButton);
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
