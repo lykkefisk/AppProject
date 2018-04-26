@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.janesbrain.cartracker.model.ParkingData;
@@ -29,9 +30,10 @@ import com.janesbrain.cartracker.model.ParkingData;
 public class MainActivity extends AppCompatActivity {
 
     //Declare UI widgets
-    Button parkButton;
+    ImageButton settingButton;
     Button findButton;
     Button recentButton;
+    Button parkButton;
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
 
@@ -77,9 +79,10 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        parkButton = (Button) findViewById(R.id.parkButton);
+        settingButton = (ImageButton) findViewById(R.id.settingsButton);
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
+        parkButton = (Button) findViewById(R.id.parkButton);
 
         checkPermission();
 

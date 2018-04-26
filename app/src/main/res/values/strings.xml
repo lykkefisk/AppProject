@@ -39,5 +39,10 @@
     <string name="lbl_bg_service">Background Service:</string>
     <string name="lbl_bound_service">Bound Service:</string>
     <string name="updatedTextView">Last updated:</string>
+    <string name="btnSave">Save</string>
+    <string name="txtSave">Save parking</string>
+    <string name="txtFind">Find your car</string>
+    <string name="txtSettings">Settings</string>
+    <string name="txtRecent">Find recent parkings</string>
 
 </resources>
