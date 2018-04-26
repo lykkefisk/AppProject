@@ -5,7 +5,7 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
 @Entity //everytime we get get the users, we will pull it from the room database
-public class ManualLocation {
+public class ManualLocation extends absLocation {
     @PrimaryKey(autoGenerate = true) //everytime you add a new record it will generete and add it in the room database
     private int id;
 
@@ -27,8 +27,9 @@ public class ManualLocation {
     @ColumnInfo(name = "time_stamp")
     private String timeStamp;
 
-    //Constructor
-    public ManualLocation(String address, String addressNo, String zipCode, String city, String country, String timeStamp) {
+    public ManualLocation( String address, String addressNo, String zipCode, String city, String country, String timeStamp)
+    {
+        super(0); //TODO All have id=0, change this
         this.address = address;
         this.addressNo = addressNo;
         this.zipCode = zipCode;

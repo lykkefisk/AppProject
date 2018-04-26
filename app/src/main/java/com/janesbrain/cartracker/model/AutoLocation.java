@@ -14,16 +14,16 @@ public class AutoLocation {
     private String addressLine;
 
     @ColumnInfo(name = "latitude")
-    private String latitude;
+    private Double latitude;
 
     @ColumnInfo(name = "longitude")
-    private String longitude;
+    private Double longitude;
 
     @ColumnInfo(name = "time_stamp")
     private String timeStamp;
 
     //Constructor
-    public AutoLocation(String addressLine, String latitude, String longitude, String timeStamp) {
+    public AutoLocation(String addressLine, Double latitude, Double longitude, String timeStamp) {
         this.addressLine = addressLine;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -40,14 +40,14 @@ public class AutoLocation {
     public void  setAddressLine(String addressLine) { this.addressLine = addressLine; }
 
 
-    public String getLatitude() { return latitude; }
+    public Double getLatitude() { return latitude; }
 
-    public void setLatitude(String latitude) { this.latitude = latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
 
 
-    public String getLongitude() { return longitude; }
+    public Double getLongitude() { return longitude; }
 
-    public void setLongitude(String longitude) { this.longitude = longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 
 
     public String getTimeStamp() { return timeStamp; }
