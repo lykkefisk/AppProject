@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 findDialog.setContentView(R.layout.find_car);
                 findDialog.show();
                 //TODO Find object with the saved (last saved) position, and show on map
+                    mService.UpdateLocation();
             }
         }
         });
