@@ -44,5 +44,6 @@
     <string name="txtFind">Find your car</string>
     <string name="txtSettings">Settings</string>
     <string name="txtRecent">Find recent parkings</string>
+    <string name="recentTextView" />
 
 </resources>

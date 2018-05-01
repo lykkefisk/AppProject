@@ -29,6 +29,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.stetho.Stetho;
@@ -40,6 +41,9 @@ import com.janesbrain.cartracker.database.AutoRoom;
 import com.janesbrain.cartracker.model.AutoLocation;
 import com.janesbrain.cartracker.model.ParkingData;
 import com.janesbrain.cartracker.model.absLocation;
+import com.janesbrain.cartracker.database.AutoLocationDao;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -52,13 +56,13 @@ public class MainActivity extends AppCompatActivity {
     Button findButton;
     Button recentButton;
     Button parkButton;
+    TextView recentTextView;
     ListView recentListView;
     //private String lastUpdated;
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
 
     private Dialog recentDialog;
-    private  Dialog findDialog;
     public ParkingData parkingData;
     private static final String TAG = "MAIN_ACTIVITY";
     private LocationManager locationMng;
@@ -67,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     FusedLocationProviderClient mFusedLocationClient;
     private AutoRoom autoRoom;
 
+    AutoLocationDao autoDao;
 
     //For background service
     private long task_time = 4*1000; //4 ms
@@ -142,13 +147,11 @@ public class MainActivity extends AppCompatActivity {
                 if (mBound) {
                 Log.d(TAG, "Bound - findButton");
 
-                //Makes a dialog box
-                findDialog = new Dialog(MainActivity.this);
-                findDialog.setTitle("Find your car");
-                findDialog.setContentView(R.layout.find_car);
-                findDialog.show();
+                Intent findIntent = new Intent(MainActivity.this, FindActivity.class);
+                startActivity(findIntent);
+
                 //TODO Find object with the saved (last saved) position, and show on map
-                    mService.UpdateLocation();
+
             }
         }
         });
@@ -157,19 +160,36 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+            recentTextView = (TextView) findViewById(R.id.recentTextView);
+
+            //For fetching data from the Room database
+            List<AutoLocation> autoLocations = autoDao.getAllAutoLocation();
+            String info = "";
+
+            for (AutoLocation autoLocation : autoLocations){
+                String addressLine = autoLocation.getAddressLine();
+                String timeStamp = autoLocation.getTimeStamp();
+                Double lat = autoLocation.getLatitude();
+                Double lon = autoLocation.getLongitude();
+                info = info+ "\n\n" +
+                        "Time: " + timeStamp + "\n"
+                        + "AddresLine: " + addressLine;
+
+            }
 
                 //Makes a dialog box
-                recentDialog = new Dialog(MainActivity.this);
-                recentDialog.setTitle("Recent parked location");
-                recentDialog.setContentView(R.layout.recent_list);
-                recentListView = (ListView) findViewById(R.id.recentListView);
+                //recentDialog = new Dialog(MainActivity.this);
+                //recentDialog.setTitle("Recent parked location");
+                //recentDialog.setContentView(R.layout.recent_list);
+                //recentTextView.setText(info);
+                //recentListView = (ListView) findViewById(R.id.recentListView);
 
-                recentListView.setEnabled(true);
+                //recentListView.setEnabled(true);
 
-                mAdapter = new ListViewAdaptor(MainActivity.this, locationList);
-                recentListView.setAdapter(mAdapter);
+                //mAdapter = new ListViewAdaptor(MainActivity.this, locationList);
+                //recentListView.setAdapter(mAdapter);
 
-                recentDialog.show();
+                //recentDialog.show();
                 //TODO Show list with recent parked places (data from DB)
                 //TODO Back button
             }
