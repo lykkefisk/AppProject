@@ -24,6 +24,8 @@ import android.widget.Toast;
 
 import com.janesbrain.cartracker.model.ParkingData;
 
+import java.net.URI;
+
 public class CarService extends Service {
     public static final String BROADCAST_BACKGROUND_SERVICE_RESULT = "com.janesbrain.cartracker.BROADCAST_BACKGROUND_SERVICE_RESULT";
     public static final String EXTRA_TASK_RESULT = "task_result";
@@ -44,7 +46,7 @@ public class CarService extends Service {
     //Whether to run as a ForegroundService (with permanent notification, harder to kill)
     private boolean runAsForegroundService = true;
     private LocationManager locationMng;
-    private Location current;
+
 
     // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
@@ -54,12 +56,13 @@ public class CarService extends Service {
         return mBinder;
     }
 
-    private Location userLocation;
-
     public LocationListener locListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            Log.d(TAG, "location is returned form manager\r\n" + location.toString());
+            Log.d(TAG, "onLocationChanged called");
+            // maybe just save the location as a breadcrumb instead
+            // this should be the tracking service, I think (jane)
+            //UpdateLocation(location);
         }
 
         @Override
@@ -89,9 +92,6 @@ public class CarService extends Service {
     @Override
     public void onCreate() {
         Log.d(TAG, "Background service onCreate");
-        String result = UpdateLocation();
-        Log.d(TAG, result);
-        Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
     }
 
     //Copied from ServiceDemo
@@ -143,7 +143,7 @@ public class CarService extends Service {
     private boolean stopTracking() {
 
         try {
-            //locationMng.removeUpdates(locListener);
+            locationMng.removeUpdates(locListener);
             isTracking = false;
         } catch (SecurityException ex) {
             //TODO: user have disabled location permission - need to validate this permission for newer versions
@@ -165,65 +165,59 @@ public class CarService extends Service {
     }
 
     //Copied from ArnieExercizeFinder
-    // er det ikke denne her der finder gps for hvor man er, når appen første gang starter ??
-    public String UpdateLocation() {
+    public String UpdateLocation(Location current) {
+
         String status = "";
-        SetupLocationManager();
-        Log.d(TAG, "NOW done with ::SetupLocationManager");
-        if (current != null) {
-            status += " location=known";
-            latitude = userLocation.getLatitude();
-            longitude = userLocation.getLongitude();
-            //locationTextView.setText("Lat: " + latitude + "\n" + "Long: " + longitude);
 
-            if (locationMng != null) {
-                if (ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    //do nothing... her kommer den lille popup frem efter første klik.
-                    Toast.makeText(this, "Need permission for location", Toast.LENGTH_LONG).show();
-                } else {
-                    Location lastGps = locationMng.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    Location lastNetwork = locationMng.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (current == null) return null;
+        else {
 
-                    status += " \n" + "last_known_location=";
-                    if (lastGps != null) {
-                        status += "{" + lastGps.getLatitude() + ";" + lastGps.getLongitude() + "} (GPS) ";
-                    }
-                    if (lastNetwork != null) {
-                        status += "{" + lastNetwork.getLatitude() + ";" + lastNetwork.getLongitude() + "} (Network) ";
-                    }
-                    // Create a Uri from an intent string. Use the result to create an Intent.
-                    Uri gmmIntentUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
-                    // Create an Intent from gmmIntentUri. Set the action to ACTION_VIEW
-                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                    // Make the Intent explicit by setting the Google Maps package
-                    mapIntent.setPackage(getString(R.string.google_package));
-                    // Attempt to start an activity that can handle the Intent
-                    if (mapIntent.resolveActivity(getPackageManager()) != null) {
-                        startActivity(mapIntent);
-                    }
-                }
+            latitude = current.getLatitude();
+            longitude = current.getLongitude();
+        }
+        if (locationMng != null) {
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                //do nothing... her kommer den lille popup frem efter første klik.
+                Toast.makeText(this, "Need permission for location", Toast.LENGTH_LONG).show();
             } else {
-                //locationTextView.setText("Unknown\n");
-                status += " location=unknown";
-                Log.d(TAG, "Update method. location manager is null");
+                Location lastGps = locationMng.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                Location lastNetwork = locationMng.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                // TODO why is this done?!?! jane wonders again
             }
-        }
-        if (isTracking) {
-            status += " tracking=true";
-        } else {
-            status += " tracking=false";
-        }
-        // locationTextView.setText("Status: " + status);
+            /*
+            // NO REASON TO HAVE THE ACTIVITY STARTING
+            // WE JUST NEED TO SAVE THE LOCATION AS A "breadcrumb"
 
+
+            // Create a Uri from an intent string. Use the result to create an Intent.
+            Uri gmmIntentUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+            // Create an Intent from gmmIntentUri. Set the action to ACTION_VIEW
+            // THE ACTION VIEW, MUST BE IN THE MANIFEST WITH A CLASS THAT HANDLES VIEW ACTIONS!!!! (JANE)
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+            // Make the Intent explicit by setting the Google Maps package
+            mapIntent.setPackage(getString(R.string.google_package));
+            // Attempt to start an activity that can handle the Intent
+            if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(mapIntent);
+            }
+*/
+
+        } // end if: location manager is not null
+        else {
+
+            // this cannot happen inside the service class
+            // we will loose the breadcrumbs, if it does
+        }
 
         return status;
-
     }
+
+
 
     //Copied from ArnieExercizeFinder
     private String SetupLocationManager() {
