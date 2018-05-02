@@ -2,6 +2,8 @@ package com.janesbrain.cartracker;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.app.FragmentManager;
+import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -12,14 +14,14 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
@@ -36,23 +38,22 @@ import android.widget.Toast;
 import com.facebook.stetho.Stetho;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.janesbrain.cartracker.database.AutoRoom;
+import com.janesbrain.cartracker.dialogs.AutoSaveDialog;
+import com.janesbrain.cartracker.dialogs.ManualSaveDialog;
+import com.janesbrain.cartracker.dialogs.PopupListener;
 import com.janesbrain.cartracker.model.AutoLocation;
 import com.janesbrain.cartracker.model.ParkingData;
 import com.janesbrain.cartracker.model.absLocation;
 import com.janesbrain.cartracker.database.AutoLocationDao;
 
-import org.w3c.dom.Text;
-
-import java.io.IOException;
-import java.util.Calendar;
+import java.io.Serializable;
 import java.util.List;
 
-import javax.security.auth.callback.CallbackHandler;
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+        implements PopupListener {
 
     //Declare UI widgets
     ImageButton settingButton;
@@ -65,9 +66,12 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
     private boolean LOCATION_TRACKING_PERMITTED;
-
+    private static final String google_package= "com.google.android.apps.maps";
 
     private Dialog recentDialog;
+    private AutoSaveDialog autoSave;
+    private ManualSaveDialog manualSave;
+
     public ParkingData parkingData;
     private static final String TAG = "MAIN_ACTIVITY";
     private LocationManager locationMng;
@@ -76,11 +80,9 @@ public class MainActivity extends AppCompatActivity {
 
     // what is this for ?? (jane asks)
     FusedLocationProviderClient mFusedLocationClient;
+
     private AutoRoom autoRoom;
     AutoLocationDao autoDao;
-
-    //For background service
-    private long task_time = 4*1000; //4 ms
 
     //For bind service
     CarService mService;
@@ -96,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
             mService = binder.getService();
             mBound = true;
         }
-
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mBound = false;
@@ -108,9 +109,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         Log.d(TAG, "onCreate is called");
-        RequestPermission();
 
          /* Stetho initialization - allows for debugging features in Chrome browser
            See http://facebook.github.io/stetho/ for details
@@ -126,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
                         Stetho.defaultInspectorModulesProvider(this))
                 .build());
         /* end Stethos */
-
+        RequestPermission();
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         //Get the data through Shareds prefrences
@@ -141,19 +140,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                // the control statement is from RequestPermission has been called;
-                // i is also saved between rotations as a boolean
-                if (LOCATION_TRACKING_PERMITTED){
+                if (LOCATION_TRACKING_PERMITTED) {
 
-                    // TODO make the dialog for autoposition show
+                    FragmentManager fm = getFragmentManager();
+                    autoSave = new AutoSaveDialog();
+                    autoSave.show(fm, "fragment");
+
                 } else {
-
-                    // TODO make the dialog for manual show
+                    FragmentManager fm = getFragmentManager();
+                    manualSave = new ManualSaveDialog();
+                    manualSave.show(fm, "fragment");
                 }
-
-                // TODO... when the user accepts the position in dialog, call this
-                // save the loaction and then ..
-                //startTracking(task_time);
             }
         });
 
@@ -162,21 +159,22 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
 
-                    // TODO ... the parked location that was saved just before
+                // TODO ... the parked location that was saved just before
                 // i have no idea how to get it (jane)
 
                 // this is just for testing the activity
-                    double latitude = 0.0;
-                    double longitude = 0.0;
-                    Uri mapViewUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
-                    Intent viewMap = new Intent(Intent.ACTION_VIEW, mapViewUri);
-                    viewMap.setPackage(getString(R.string.google_package));
-                    if(viewMap.resolveActivity(getPackageManager())!= null){
-                        startActivity(viewMap);
-                    }
+                double latitude = 0.0;
+                double longitude = 0.0;
+                Uri parkedUrlAddress = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+
+                if (parkingData != null) parkedUrlAddress = parkingData.GetUrlData();
+
+                Intent viewMap = new Intent(Intent.ACTION_VIEW, parkedUrlAddress);
+                viewMap.setPackage(google_package);
+                if (viewMap.resolveActivity(getPackageManager()) != null) {
+                    startActivity(viewMap);
                 }
-
-
+            }
         });
 
         recentButton.setOnClickListener(new View.OnClickListener() {
@@ -229,10 +227,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     //Copied from ArnieExercizeFinder
     //modified from: https://developer.android.com/training/permissions/requesting.html
     private void RequestPermission() {
+
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -241,8 +239,9 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_LOCATION);
+            Log.d(TAG,"Calling for user persission is initiated");
         } else {
-            Log.d(TAG, "Permission is granted");
+            Log.d(TAG, "Permission is already granted");
 
         }
     }
@@ -286,10 +285,13 @@ public class MainActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
             }
         }// end if requestCode is the same as ours
+
         // else is redundant
     }
 
+
     //Copied from ServiceDemo
+    // what are we supposed to start?? (jane is never learning)
     @Override
     protected void onStart() {
         Log.d(TAG, "onStart is called");
@@ -327,7 +329,7 @@ public class MainActivity extends AppCompatActivity {
     //Copied from ServiceDemo
     //Starts background service, taskTime indicates desired sleep period in ms for broadcasts
     private void startTracking(long taskTime){
-        Log.d(TAG, "startBackgroundService is called");
+        Log.d(TAG, "startService is called");
         Intent backgroundServiceIntent = new Intent(MainActivity.this, CarService.class);
         backgroundServiceIntent.putExtra(CarService.EXTRA_TASK_TIME_MS, taskTime);
         // bindService(backgroundServiceIntent,mConnection,BIND_AUTO_CREATE);
@@ -342,38 +344,25 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             //TODO Recieve data from backgroundservice
             // what data ?!?! (jane asks)
+
+            // I'm gonne use this for intercepting the pending intent
+            if(intent.getAction().equals(R.string.pending_action)){
+                Serializable item = intent.getSerializableExtra("PARKING");
+                if(item != null) {
+                    parkingData = (ParkingData)item;
+
+                }
+            }
         }
     };
 
-    //TODO SLETTES???  kun hvis det har indflydelse på noget der kører i forgrunden (jane)
-    //Comes with a warning when the users presses the BACK button in MainActivity
-    public void onBackPressed() {
-        //Open messagebox
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setMessage("Do you want to exit the app?");
-        builder.setCancelable(true);
 
-        //Press ok and the app exits
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int id) {
-                finish(); //App exits
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel(); //Cancel Exit
-            }
-        });
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
 
     //Saves the data between rotations
     @Override
     protected void onSaveInstanceState (Bundle outState){
         Log.d(TAG, "onSaveInstanceState is called");
+        if(parkingData != null) outState.putSerializable("PARKING", parkingData);
         outState.putBoolean("USERPERMISSION", LOCATION_TRACKING_PERMITTED);
         super.onSaveInstanceState(outState);
     }
@@ -383,6 +372,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState (Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
         LOCATION_TRACKING_PERMITTED = savedInstanceState.getBoolean("USERPERMISSION",false);
+        Serializable item = savedInstanceState.getSerializable("PARKING");
+        if(item != null) parkingData = (ParkingData)item;
         Log.d(TAG, "onRestoreInstanceState is called");
     }
 
@@ -396,5 +387,38 @@ public class MainActivity extends AppCompatActivity {
         prefEDIT.apply();
     }
 
+    @Override
+    public void OnSaved(android.app.DialogFragment dialog) {
+        if(dialog.equals(autoSave)){
+            // TODO ... save the autoLocation
+            // startService(new Intent());
+        }
+        else{
+            // TODO.. save the manualLocation
+            String userTyped = manualSave.GetTypedAddess();
+            // JUST TO SHOW MY INTENTION
+
+            // remember to close the dialog when done
+            // manualSave.dismiss();
+        }
+
+    }
+
+    @Override
+    public void OnCancelled(android.app.DialogFragment dialog) {
+
+        if(dialog.equals( manualSave)){
+            manualSave.dismiss();
+        }
+        else{
+            autoSave.dismiss();
+            // flips to manually typing the correct location
+
+            manualSave = (ManualSaveDialog) dialog;
+            FragmentManager fm = getFragmentManager();
+            manualSave.show(fm, "fragment");
+
+        }
+    }
 }
 

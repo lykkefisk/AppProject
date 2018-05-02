@@ -31,7 +31,7 @@
 
     <string name="recentTextView" />
     <string name="locationTextView" />
-    
+
     <string name="dialog_header">Please fill out the form</string>
     <string name="note_back_pressed">The map will be closed</string>
     <string name="note_manual_saving">The application will save the address for later</string>

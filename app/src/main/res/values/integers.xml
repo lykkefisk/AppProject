@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer name="LOCATION_REQUEST_CODE">189</integer>
+    <integer name="SLEEP_1minute">60000</integer>
+    <integer name="SLEEP_2minutes">120000</integer>
+    <integer name="NOTIFY_ID">142</integer>
+    <integer name="DISTANCE_1M">1</integer>
 </resources>
