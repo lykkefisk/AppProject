@@ -128,15 +128,18 @@ public class MainActivity extends AppCompatActivity {
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
 
-
         checkPermission();
+        createDataBase();        
 
         parkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //TODO Save the current position (auto or manual address) to database
-               // tryGetCurrentLocation();
+                Log.d(TAG, "parkButton clicked");
                 //TODO Save to database
+               tryGetCurrentLocation();
+
+
 
             }
         });
@@ -145,10 +148,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mBound) {
-                Log.d(TAG, "Bound - findButton");
+                Log.d(TAG, "findButton clicked");
 
                 Intent findIntent = new Intent(MainActivity.this, FindActivity.class);
                 startActivity(findIntent);
+
+                    final AutoRoom autoRoom = Room.databaseBuilder(getApplicationContext(), AutoRoom.class, "production")
+                            .allowMainThreadQueries() //allow the database to read/write in the main UI thread (not good)
+                            .fallbackToDestructiveMigration()
+                            .build();
+
+                    //For fetching data from the Room database
+                    //https://www.youtube.com/watch?v=Dik-sGDWTrE&feature=youtu.be
+                    //TODO Flyttes til FindActivity
+                    List<AutoLocation> autoLocations = autoRoom.autoLocationDao().getAllAutoLocation();
+                    String info = "";
+
+                    for (AutoLocation autoLocation : autoLocations){
+                        String addressLine = autoLocation.getAddressLine();
+                        String timeStamp = autoLocation.getTimeStamp();
+                        Double lat = autoLocation.getLatitude();
+                        Double lon = autoLocation.getLongitude();
+                    }
 
                 //TODO Find object with the saved (last saved) position, and show on map
 
@@ -160,36 +181,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-            recentTextView = (TextView) findViewById(R.id.recentTextView);
+                Intent recentIntent = new Intent (MainActivity.this, RecentActivity.class);
+                startActivity(recentIntent);
 
-            //For fetching data from the Room database
-            List<AutoLocation> autoLocations = autoDao.getAllAutoLocation();
-            String info = "";
-
-            for (AutoLocation autoLocation : autoLocations){
-                String addressLine = autoLocation.getAddressLine();
-                String timeStamp = autoLocation.getTimeStamp();
-                Double lat = autoLocation.getLatitude();
-                Double lon = autoLocation.getLongitude();
-                info = info+ "\n\n" +
-                        "Time: " + timeStamp + "\n"
-                        + "AddresLine: " + addressLine;
-
-            }
-
-                //Makes a dialog box
-                //recentDialog = new Dialog(MainActivity.this);
-                //recentDialog.setTitle("Recent parked location");
-                //recentDialog.setContentView(R.layout.recent_list);
-                //recentTextView.setText(info);
-                //recentListView = (ListView) findViewById(R.id.recentListView);
-
-                //recentListView.setEnabled(true);
-
-                //mAdapter = new ListViewAdaptor(MainActivity.this, locationList);
-                //recentListView.setAdapter(mAdapter);
-
-                //recentDialog.show();
                 //TODO Show list with recent parked places (data from DB)
                 //TODO Back button
             }
@@ -218,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        mFusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location l) {
 
