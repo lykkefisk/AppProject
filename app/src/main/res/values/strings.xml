@@ -1,15 +1,21 @@
 <resources>
-    <string name="app_name">CarTracker</string>
+    <string name="app_name">Car Tracker</string>
+    <string name="startButton">Start Tracking</string>
+    <string name="stopButton">Stop Tracking</string>
+
     <string name="findButton">Find</string>
     <string name="parkButton">Park</string>
     <string name="recentButton">Recent</string>
+    <string name="editButton">Edit Address</string>
+    <string name="cancelButton">Cancel</string>
+    <string name="saveButton">Save</string>
 
     <string name="latTextView">Lat</string>
     <string name="longTextView">Long</string>
     <string name="latitude">Latitude:</string>
     <string name="longitude">Longitude:</string>
-    <string name="saveButton">Save Address</string>
-    <string name="address">Adress:</string>
+
+    <string name="address">Address:</string>
     <string name="adressEditText">Enter your Address</string>
     <string name="timeStampTextView">Date/Time</string>
     <string name="noEditText">Enter No.</string>
@@ -21,26 +27,21 @@
     <string name="country">Country:</string>
     <string name="countryEditText">Enter Country</string>
     <string name="addressLineTextView">Auto address</string>
-    <string name="editButton">Edit Address</string>
-    <string name="cancelButton">Cancel</string>
     <string name="currentAddressTextView">Current Address:</string>
 
-
-    <string name="startButton">Start Tracking</string>
-    <string name="stopButton">Stop Tracking</string>
+    <string name="recentTextView" />
     <string name="locationTextView" />
-
-    <string name="google_package">com.google.android.apps.maps</string>
-    <string name="google_gms_service">com.google.gms.</string>
-    <string name="google_map_key">AIzaSyDztFAiqH3jsXPLAsLUwKBivQ6jpPLJl6Q</string>
-
-    <string name="note_manual_saving">The application can only save parked location</string>
-    <string name="note_permission_denied">Please enable device locator, if you would like to track your route</string>
+    
+    <string name="dialog_header">Please fill out the form</string>
+    <string name="note_back_pressed">The map will be closed</string>
+    <string name="note_manual_saving">The application will save the address for later</string>
+    <string name="note_permission_denied">Please enable device locator if you would like to track your route</string>
 
     <string name="service1">A started service that runs in the background</string>
     <string name="service2">A bound service - that activities can bind to</string>
     <string name="service3">An intent service for handling tasks</string>
     <string name="broadcast_action">UPDATE_LOCATION</string>
+    <string name="pending_action">UPDATE_PARKED_LOCATION</string>
 
     <string name="err_bg_service_result">ERROR: could not retrieve result</string>
     <string name="lbl_bg_service">Background Service:</string>
@@ -51,6 +52,5 @@
     <string name="txtFind">Find your car</string>
     <string name="txtSettings">Settings</string>
     <string name="txtRecent">Find recent parkings</string>
-    <string name="recentTextView" />
 
 </resources>
