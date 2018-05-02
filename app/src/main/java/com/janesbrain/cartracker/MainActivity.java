@@ -16,6 +16,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -49,6 +50,8 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
 
+import javax.security.auth.callback.CallbackHandler;
+
 public class MainActivity extends AppCompatActivity {
 
     //Declare UI widgets
@@ -61,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
     //private String lastUpdated;
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
+    private boolean LOCATION_TRACKING_PERMITTED;
+
 
     private Dialog recentDialog;
     public ParkingData parkingData;
@@ -68,9 +73,10 @@ public class MainActivity extends AppCompatActivity {
     private LocationManager locationMng;
     private ListViewAdaptor mAdapter;
     private List<absLocation> locationList;
+
+    // what is this for ?? (jane asks)
     FusedLocationProviderClient mFusedLocationClient;
     private AutoRoom autoRoom;
-
     AutoLocationDao autoDao;
 
     //For background service
@@ -102,7 +108,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Log.d(TAG, "onCreate is called");
+        RequestPermission();
 
          /* Stetho initialization - allows for debugging features in Chrome browser
            See http://facebook.github.io/stetho/ for details
@@ -118,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
                         Stetho.defaultInspectorModulesProvider(this))
                 .build());
         /* end Stethos */
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         //Get the data through Shareds prefrences
@@ -128,54 +137,68 @@ public class MainActivity extends AppCompatActivity {
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
 
-
-        checkPermission();
-
         parkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO Save the current position (auto or manual address) to database
-               // tryGetCurrentLocation();
-                //TODO Save to database
 
+                // the control statement is from RequestPermission has been called;
+                // i is also saved between rotations as a boolean
+                if (LOCATION_TRACKING_PERMITTED){
+
+                    // TODO make the dialog for autoposition show
+                } else {
+
+                    // TODO make the dialog for manual show
+                }
+
+                // TODO... when the user accepts the position in dialog, call this
+                // save the loaction and then ..
+                //startTracking(task_time);
             }
         });
 
         findButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mBound) {
-                Log.d(TAG, "Bound - findButton");
 
-                Intent findIntent = new Intent(MainActivity.this, FindActivity.class);
-                startActivity(findIntent);
 
-                //TODO Find object with the saved (last saved) position, and show on map
+                    // TODO ... the parked location that was saved just before
+                // i have no idea how to get it (jane)
 
-            }
-        }
+                // this is just for testing the activity
+                    double latitude = 0.0;
+                    double longitude = 0.0;
+                    Uri mapViewUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+                    Intent viewMap = new Intent(Intent.ACTION_VIEW, mapViewUri);
+                    viewMap.setPackage(getString(R.string.google_package));
+                    if(viewMap.resolveActivity(getPackageManager())!= null){
+                        startActivity(viewMap);
+                    }
+                }
+
+
         });
 
         recentButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-            recentTextView = (TextView) findViewById(R.id.recentTextView);
+                recentTextView = (TextView) findViewById(R.id.recentTextView);
 
-            //For fetching data from the Room database
-            List<AutoLocation> autoLocations = autoDao.getAllAutoLocation();
-            String info = "";
+                //For fetching data from the Room database
+                List<AutoLocation> autoLocations = autoDao.getAllAutoLocation();
+                String info = "";
 
-            for (AutoLocation autoLocation : autoLocations){
-                String addressLine = autoLocation.getAddressLine();
-                String timeStamp = autoLocation.getTimeStamp();
-                Double lat = autoLocation.getLatitude();
-                Double lon = autoLocation.getLongitude();
-                info = info+ "\n\n" +
-                        "Time: " + timeStamp + "\n"
-                        + "AddresLine: " + addressLine;
+                for (AutoLocation autoLocation : autoLocations) {
+                    String addressLine = autoLocation.getAddressLine();
+                    String timeStamp = autoLocation.getTimeStamp();
+                    Double lat = autoLocation.getLatitude();
+                    Double lon = autoLocation.getLongitude();
+                    info = info + "\n\n" +
+                            "Time: " + timeStamp + "\n"
+                            + "AddresLine: " + addressLine;
 
-            }
+                }
 
                 //Makes a dialog box
                 //recentDialog = new Dialog(MainActivity.this);
@@ -194,7 +217,6 @@ public class MainActivity extends AppCompatActivity {
                 //TODO Back button
             }
         });
-
     }
 
     private void createDataBase(){
@@ -207,88 +229,21 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void tryGetCurrentLocation(){
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        mFusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location l) {
-
-                updateLocation(l);
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, e.getMessage());
-            }
-        });
-
-    }
-
-    private void updateLocation(Location location) {
-        if(location != null) {
-            double longitude = location.getLongitude();
-            double latitude = location.getLatitude();
-
-            //From Kasper via mail
-            String a = "";
-            Geocoder coder = new Geocoder(this);
-
-            List<Address>addresses = null;
-            try {
-                addresses = coder.getFromLocation(latitude, longitude, 1);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if(addresses!=null && addresses.size()>0){
-                Address address = addresses.get(0);
-                for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
-                    a += address.getAddressLine(i) + "\n";
-                }
-                a+= address.getCountryName();
-
-                //Specifies the lastupdated (Date/Time)
-                //https://stackoverflow.com/questions/907170/java-getminutes-and-gethours
-                String lastUpdated;
-                Calendar timeNow = Calendar.getInstance();
-                int hour = timeNow.get(Calendar.HOUR_OF_DAY);
-                int minut = timeNow.get(Calendar.MINUTE);
-                int sec = timeNow.get(Calendar.SECOND);
-                int date = timeNow.get(Calendar.DATE);
-                int month = timeNow.get(Calendar.MONTH)+1;
-                int year = timeNow.get(Calendar.YEAR);
-                lastUpdated = date + "-" + month + "-" + year + " " + hour + ":" + minut + ":" + sec;
-
-                AutoLocation autoLocation = new AutoLocation(a, latitude, longitude, lastUpdated);
-                autoRoom.autoLocationDao().insertAll(autoLocation);
-
-                Toast.makeText(this, "Your parking data has been saved. \n" +"\n Address: \n" + a, Toast.LENGTH_LONG).show();
-            }
-        }
-    }
 
     //Copied from ArnieExercizeFinder
     //modified from: https://developer.android.com/training/permissions/requesting.html
-    private void checkPermission(){
+    private void RequestPermission() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED){
+                != PackageManager.PERMISSION_GRANTED) {
             // No explanation needed, we can request the permission.
 
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_LOCATION);
-        }
-        else{
-            Log.d(TAG,"Permission is granted");
+        } else {
+            Log.d(TAG, "Permission is granted");
+
         }
     }
 
@@ -298,27 +253,45 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         Log.d(TAG, "onRequestPermission is called");
 
+        // THIS IS HEAAAVY USE of CPU power
+        // don't use switch if there is only 1 option!
+        // it is bad form (jane)
+        /*
         switch (requestCode){
             case PERMISSIONS_REQUEST_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
+                // so why check the code at all?? (jane wonders still)
+
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-
-
-                } else {
-                    // permission denied
-                    //in this case we just close the app
-                    Toast.makeText(this, " You need to enable permission for Location to use the app", Toast.LENGTH_SHORT).show();
-                    //finish();
+                    // I guess the permission to track location is granted ??
+                    LOCATION_TRACKING_PERMITTED = true;
                 }
+                else {
+                    // permission denied
+                    LOCATION_TRACKING_PERMITTED = false;
+                    Toast.makeText(this,
+                            R.string.note_permission_denied+"\r\n"+R.string.note_manual_saving,
+                            Toast.LENGTH_SHORT).show();
+                }
+                // use break and not return when calling on switch cases
                 return;
+                */
+        if (requestCode == PERMISSIONS_REQUEST_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                LOCATION_TRACKING_PERMITTED = true;
+            } else {
+                LOCATION_TRACKING_PERMITTED = false;
+                Toast.makeText(this,
+                        R.string.note_permission_denied + "\r\n" + R.string.note_manual_saving,
+                        Toast.LENGTH_SHORT).show();
             }
-        }
+        }// end if requestCode is the same as ours
+        // else is redundant
     }
 
     //Copied from ServiceDemo
     @Override
     protected void onStart() {
-        super.onStart();
         Log.d(TAG, "onStart is called");
 
         //Registering broadcast receivers
@@ -332,12 +305,14 @@ public class MainActivity extends AppCompatActivity {
         //Binds to the service
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "bindService is called");
+
+        super.onStart();
     }
 
     //Copied from ServiceDemo
     @Override
     protected void onStop() {
-        super.onStop();
+
         Log.d(TAG, "onStop is called");
         //Unregistering broadcast receivers
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myBroadcastReciever);
@@ -345,11 +320,13 @@ public class MainActivity extends AppCompatActivity {
         unbindService(mConnection);
         Log.d(TAG, "Unregistering broadcast receivers");
         mBound = false;
+
+        super.onStop();
     }
 
     //Copied from ServiceDemo
     //Starts background service, taskTime indicates desired sleep period in ms for broadcasts
-    private void startBackgroundService(long taskTime){
+    private void startTracking(long taskTime){
         Log.d(TAG, "startBackgroundService is called");
         Intent backgroundServiceIntent = new Intent(MainActivity.this, CarService.class);
         backgroundServiceIntent.putExtra(CarService.EXTRA_TASK_TIME_MS, taskTime);
@@ -364,14 +341,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             //TODO Recieve data from backgroundservice
-            Log.d(TAG, "Broadcast reveiced from background service");
-
-
-            Log.d(TAG, "updateViews BroadcastReceiver");
+            // what data ?!?! (jane asks)
         }
     };
 
-    //TODO SLETTES???
+    //TODO SLETTES???  kun hvis det har indflydelse på noget der kører i forgrunden (jane)
     //Comes with a warning when the users presses the BACK button in MainActivity
     public void onBackPressed() {
         //Open messagebox
@@ -400,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState (Bundle outState){
         Log.d(TAG, "onSaveInstanceState is called");
-        //outState.putString();
+        outState.putBoolean("USERPERMISSION", LOCATION_TRACKING_PERMITTED);
         super.onSaveInstanceState(outState);
     }
 
@@ -408,6 +382,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onRestoreInstanceState (Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
+        LOCATION_TRACKING_PERMITTED = savedInstanceState.getBoolean("USERPERMISSION",false);
         Log.d(TAG, "onRestoreInstanceState is called");
     }
 

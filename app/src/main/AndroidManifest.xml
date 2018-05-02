@@ -21,22 +21,35 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- see link below to obtain and configure use of google api
+            https://developers.google.com/maps/documentation/android-api/config    -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_map_key"/>
+
         <activity
-            android:name=".MainActivity"
-            android:theme="@style/JanesBrain">
+            android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".FindActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+            </intent-filter>
+
+        </activity>
+
 
         <service
             android:name=".CarService"
             android:enabled="true"
             android:exported="false" />
 
-        <activity android:name=".FindActivity"></activity>
+        >
     </application>
 
 </manifest>
