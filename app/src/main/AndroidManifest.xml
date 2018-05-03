@@ -41,7 +41,8 @@
             android:enabled="true"
             android:exported="false" />
 
-        >
+
+        <activity android:name=".RecentActivity"></activity>
     </application>
 
 </manifest>

@@ -136,6 +136,9 @@ public class MainActivity extends AppCompatActivity
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
 
+        checkPermission();
+        createDataBase();
+
         parkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -157,6 +160,8 @@ public class MainActivity extends AppCompatActivity
         findButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (mBound) {
+                    Log.d(TAG, "findButton clicked");
 
 
                 // TODO ... the parked location that was saved just before
@@ -168,6 +173,21 @@ public class MainActivity extends AppCompatActivity
                 Uri parkedUrlAddress = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
 
                 if (parkingData != null) parkedUrlAddress = parkingData.GetUrlData();
+                   // TODO ... the parked location that was saved just before
+                    // i have no idea how to get it (jane)
+
+                    // this is just for testing the activity
+                    double latitude = 0.0;
+                    double longitude = 0.0;
+                    Uri mapViewUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+                    Intent viewMap = new Intent(Intent.ACTION_VIEW, mapViewUri);
+                    viewMap.setPackage(getString(R.string.google_package));
+                    if (viewMap.resolveActivity(getPackageManager()) != null) {
+                        startActivity(viewMap);
+                    }
+                }
+            }
+
 
                 Intent viewMap = new Intent(Intent.ACTION_VIEW, parkedUrlAddress);
                 viewMap.setPackage(google_package);
@@ -177,40 +197,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+
+
         recentButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                recentTextView = (TextView) findViewById(R.id.recentTextView);
+                Intent recentIntent = new Intent (MainActivity.this, RecentActivity.class);
+                startActivity(recentIntent);
 
-                //For fetching data from the Room database
-                List<AutoLocation> autoLocations = autoDao.getAllAutoLocation();
-                String info = "";
-
-                for (AutoLocation autoLocation : autoLocations) {
-                    String addressLine = autoLocation.getAddressLine();
-                    String timeStamp = autoLocation.getTimeStamp();
-                    Double lat = autoLocation.getLatitude();
-                    Double lon = autoLocation.getLongitude();
-                    info = info + "\n\n" +
-                            "Time: " + timeStamp + "\n"
-                            + "AddresLine: " + addressLine;
-
-                }
-
-                //Makes a dialog box
-                //recentDialog = new Dialog(MainActivity.this);
-                //recentDialog.setTitle("Recent parked location");
-                //recentDialog.setContentView(R.layout.recent_list);
-                //recentTextView.setText(info);
-                //recentListView = (ListView) findViewById(R.id.recentListView);
-
-                //recentListView.setEnabled(true);
-
-                //mAdapter = new ListViewAdaptor(MainActivity.this, locationList);
-                //recentListView.setAdapter(mAdapter);
-
-                //recentDialog.show();
                 //TODO Show list with recent parked places (data from DB)
                 //TODO Back button
             }
@@ -226,6 +221,75 @@ public class MainActivity extends AppCompatActivity
                 .build();
 
     }
+
+    private void tryGetCurrentLocation(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location l) {
+
+                updateLocation(l);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, e.getMessage());
+            }
+        });
+
+    }
+
+    private void updateLocation(Location location) {
+        if(location != null) {
+            double longitude = location.getLongitude();
+            double latitude = location.getLatitude();
+
+            //From Kasper via mail
+            String a = "";
+            Geocoder coder = new Geocoder(this);
+
+            List<Address>addresses = null;
+            try {
+                addresses = coder.getFromLocation(latitude, longitude, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if(addresses!=null && addresses.size()>0){
+                Address address = addresses.get(0);
+                for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
+                    a += address.getAddressLine(i) + "\n";
+                }
+                a+= address.getCountryName();
+
+                //Specifies the lastupdated (Date/Time)
+                //https://stackoverflow.com/questions/907170/java-getminutes-and-gethours
+                String lastUpdated;
+                Calendar timeNow = Calendar.getInstance();
+                int hour = timeNow.get(Calendar.HOUR_OF_DAY);
+                int minut = timeNow.get(Calendar.MINUTE);
+                int sec = timeNow.get(Calendar.SECOND);
+                int date = timeNow.get(Calendar.DATE);
+                int month = timeNow.get(Calendar.MONTH)+1;
+                int year = timeNow.get(Calendar.YEAR);
+                lastUpdated = date + "-" + month + "-" + year + " " + hour + ":" + minut + ":" + sec;
+
+                AutoLocation autoLocation = new AutoLocation(a, latitude, longitude, lastUpdated);
+                autoRoom.autoLocationDao().insertAll(autoLocation);
+
+                Toast.makeText(this, "Your parking data has been saved. \n" +"\n Address: \n" + a, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
 
     //Copied from ArnieExercizeFinder
     //modified from: https://developer.android.com/training/permissions/requesting.html

@@ -53,4 +53,9 @@
     <string name="txtSettings">Settings</string>
     <string name="txtRecent">Find recent parkings</string>
 
+    <string name="recentTextView" />
+    <string name="recentTitleTextView">Recent locations:</string>
+
+
+
 </resources>
