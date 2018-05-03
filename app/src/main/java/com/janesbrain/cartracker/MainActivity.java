@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         findButton = (Button) findViewById(R.id.findButton);
         recentButton = (Button) findViewById(R.id.recentButton);
 
-        checkPermission();
+        RequestPermission();
         createDataBase();
 
         parkButton.setOnClickListener(new View.OnClickListener() {
