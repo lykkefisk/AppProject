@@ -14,11 +14,14 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 
 import android.support.v4.app.DialogFragment;
@@ -38,6 +41,7 @@ import android.widget.Toast;
 import com.facebook.stetho.Stetho;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.janesbrain.cartracker.database.AutoRoom;
@@ -49,7 +53,9 @@ import com.janesbrain.cartracker.model.ParkingData;
 import com.janesbrain.cartracker.model.absLocation;
 import com.janesbrain.cartracker.database.AutoLocationDao;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -164,36 +170,27 @@ public class MainActivity extends AppCompatActivity
                     Log.d(TAG, "findButton clicked");
 
 
-                // TODO ... the parked location that was saved just before
-                // i have no idea how to get it (jane)
-
-                // this is just for testing the activity
-                double latitude = 0.0;
-                double longitude = 0.0;
-                Uri parkedUrlAddress = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
-
-                if (parkingData != null) parkedUrlAddress = parkingData.GetUrlData();
-                   // TODO ... the parked location that was saved just before
+                    // TODO ... the parked location that was saved just before
                     // i have no idea how to get it (jane)
 
                     // this is just for testing the activity
                     double latitude = 0.0;
                     double longitude = 0.0;
+                    Uri parkedUrlAddress = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+
+                    if (parkingData != null) parkedUrlAddress = parkingData.GetUrlData();
+                    // TODO ... the parked location that was saved just before
+                    // i have no idea how to get it (jane)
+
+
                     Uri mapViewUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
                     Intent viewMap = new Intent(Intent.ACTION_VIEW, mapViewUri);
-                    viewMap.setPackage(getString(R.string.google_package));
+                    viewMap.setPackage("com.google.android.apps.maps");
                     if (viewMap.resolveActivity(getPackageManager()) != null) {
                         startActivity(viewMap);
                     }
                 }
-            }
 
-
-                Intent viewMap = new Intent(Intent.ACTION_VIEW, parkedUrlAddress);
-                viewMap.setPackage(google_package);
-                if (viewMap.resolveActivity(getPackageManager()) != null) {
-                    startActivity(viewMap);
-                }
             }
         });
 
