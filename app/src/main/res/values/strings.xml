@@ -29,11 +29,18 @@
     <string name="startButton">Start Tracking</string>
     <string name="stopButton">Stop Tracking</string>
     <string name="locationTextView" />
+
     <string name="google_package">com.google.android.apps.maps</string>
+    <string name="google_gms_service">com.google.gms.</string>
+    <string name="google_map_key">AIzaSyDztFAiqH3jsXPLAsLUwKBivQ6jpPLJl6Q</string>
+
+    <string name="note_manual_saving">The application can only save parked location</string>
+    <string name="note_permission_denied">Please enable device locator, if you would like to track your route</string>
 
     <string name="service1">A started service that runs in the background</string>
     <string name="service2">A bound service - that activities can bind to</string>
     <string name="service3">An intent service for handling tasks</string>
+    <string name="broadcast_action">UPDATE_LOCATION</string>
 
     <string name="err_bg_service_result">ERROR: could not retrieve result</string>
     <string name="lbl_bg_service">Background Service:</string>

@@ -16,6 +16,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -49,6 +50,8 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
 
+import javax.security.auth.callback.CallbackHandler;
+
 public class MainActivity extends AppCompatActivity {
 
     //Declare UI widgets
@@ -61,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
     //private String lastUpdated;
 
     public static final int PERMISSIONS_REQUEST_LOCATION = 189;
+    private boolean LOCATION_TRACKING_PERMITTED;
+
 
     private Dialog recentDialog;
     public ParkingData parkingData;
@@ -68,9 +73,10 @@ public class MainActivity extends AppCompatActivity {
     private LocationManager locationMng;
     private ListViewAdaptor mAdapter;
     private List<absLocation> locationList;
+
+    // what is this for ?? (jane asks)
     FusedLocationProviderClient mFusedLocationClient;
     private AutoRoom autoRoom;
-
     AutoLocationDao autoDao;
 
     //For background service
@@ -102,7 +108,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Log.d(TAG, "onCreate is called");
+        RequestPermission();
 
          /* Stetho initialization - allows for debugging features in Chrome browser
            See http://facebook.github.io/stetho/ for details
@@ -118,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
                         Stetho.defaultInspectorModulesProvider(this))
                 .build());
         /* end Stethos */
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         //Get the data through Shareds prefrences
@@ -129,18 +138,25 @@ public class MainActivity extends AppCompatActivity {
         recentButton = (Button) findViewById(R.id.recentButton);
 
         checkPermission();
-        createDataBase();        
+        createDataBase();
 
         parkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO Save the current position (auto or manual address) to database
-                Log.d(TAG, "parkButton clicked");
-                //TODO Save to database
-               tryGetCurrentLocation();
 
+                // the control statement is from RequestPermission has been called;
+                // i is also saved between rotations as a boolean
+                if (LOCATION_TRACKING_PERMITTED){
 
+                    // TODO make the dialog for autoposition show
+                } else {
 
+                    // TODO make the dialog for manual show
+                }
+
+                // TODO... when the user accepts the position in dialog, call this
+                // save the loaction and then ..
+                //startTracking(task_time);
             }
         });
 
@@ -148,34 +164,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mBound) {
-                Log.d(TAG, "findButton clicked");
+                    Log.d(TAG, "findButton clicked");
 
-                Intent findIntent = new Intent(MainActivity.this, FindActivity.class);
-                startActivity(findIntent);
 
-                    final AutoRoom autoRoom = Room.databaseBuilder(getApplicationContext(), AutoRoom.class, "production")
-                            .allowMainThreadQueries() //allow the database to read/write in the main UI thread (not good)
-                            .fallbackToDestructiveMigration()
-                            .build();
+                    // TODO ... the parked location that was saved just before
+                    // i have no idea how to get it (jane)
 
-                    //For fetching data from the Room database
-                    //https://www.youtube.com/watch?v=Dik-sGDWTrE&feature=youtu.be
-                    //TODO Flyttes til FindActivity
-                    List<AutoLocation> autoLocations = autoRoom.autoLocationDao().getAllAutoLocation();
-                    String info = "";
-
-                    for (AutoLocation autoLocation : autoLocations){
-                        String addressLine = autoLocation.getAddressLine();
-                        String timeStamp = autoLocation.getTimeStamp();
-                        Double lat = autoLocation.getLatitude();
-                        Double lon = autoLocation.getLongitude();
+                    // this is just for testing the activity
+                    double latitude = 0.0;
+                    double longitude = 0.0;
+                    Uri mapViewUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
+                    Intent viewMap = new Intent(Intent.ACTION_VIEW, mapViewUri);
+                    viewMap.setPackage(getString(R.string.google_package));
+                    if (viewMap.resolveActivity(getPackageManager()) != null) {
+                        startActivity(viewMap);
                     }
-
-                //TODO Find object with the saved (last saved) position, and show on map
-
+                }
             }
-        }
+
         });
+
+
 
         recentButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -188,7 +197,6 @@ public class MainActivity extends AppCompatActivity {
                 //TODO Back button
             }
         });
-
     }
 
     private void createDataBase(){
@@ -271,18 +279,18 @@ public class MainActivity extends AppCompatActivity {
 
     //Copied from ArnieExercizeFinder
     //modified from: https://developer.android.com/training/permissions/requesting.html
-    private void checkPermission(){
+    private void RequestPermission() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED){
+                != PackageManager.PERMISSION_GRANTED) {
             // No explanation needed, we can request the permission.
 
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_LOCATION);
-        }
-        else{
-            Log.d(TAG,"Permission is granted");
+        } else {
+            Log.d(TAG, "Permission is granted");
+
         }
     }
 
@@ -292,27 +300,45 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         Log.d(TAG, "onRequestPermission is called");
 
+        // THIS IS HEAAAVY USE of CPU power
+        // don't use switch if there is only 1 option!
+        // it is bad form (jane)
+        /*
         switch (requestCode){
             case PERMISSIONS_REQUEST_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
+                // so why check the code at all?? (jane wonders still)
+
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-
-
-                } else {
-                    // permission denied
-                    //in this case we just close the app
-                    Toast.makeText(this, " You need to enable permission for Location to use the app", Toast.LENGTH_SHORT).show();
-                    //finish();
+                    // I guess the permission to track location is granted ??
+                    LOCATION_TRACKING_PERMITTED = true;
                 }
+                else {
+                    // permission denied
+                    LOCATION_TRACKING_PERMITTED = false;
+                    Toast.makeText(this,
+                            R.string.note_permission_denied+"\r\n"+R.string.note_manual_saving,
+                            Toast.LENGTH_SHORT).show();
+                }
+                // use break and not return when calling on switch cases
                 return;
+                */
+        if (requestCode == PERMISSIONS_REQUEST_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                LOCATION_TRACKING_PERMITTED = true;
+            } else {
+                LOCATION_TRACKING_PERMITTED = false;
+                Toast.makeText(this,
+                        R.string.note_permission_denied + "\r\n" + R.string.note_manual_saving,
+                        Toast.LENGTH_SHORT).show();
             }
-        }
+        }// end if requestCode is the same as ours
+        // else is redundant
     }
 
     //Copied from ServiceDemo
     @Override
     protected void onStart() {
-        super.onStart();
         Log.d(TAG, "onStart is called");
 
         //Registering broadcast receivers
@@ -326,12 +352,14 @@ public class MainActivity extends AppCompatActivity {
         //Binds to the service
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "bindService is called");
+
+        super.onStart();
     }
 
     //Copied from ServiceDemo
     @Override
     protected void onStop() {
-        super.onStop();
+
         Log.d(TAG, "onStop is called");
         //Unregistering broadcast receivers
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myBroadcastReciever);
@@ -339,11 +367,13 @@ public class MainActivity extends AppCompatActivity {
         unbindService(mConnection);
         Log.d(TAG, "Unregistering broadcast receivers");
         mBound = false;
+
+        super.onStop();
     }
 
     //Copied from ServiceDemo
     //Starts background service, taskTime indicates desired sleep period in ms for broadcasts
-    private void startBackgroundService(long taskTime){
+    private void startTracking(long taskTime){
         Log.d(TAG, "startBackgroundService is called");
         Intent backgroundServiceIntent = new Intent(MainActivity.this, CarService.class);
         backgroundServiceIntent.putExtra(CarService.EXTRA_TASK_TIME_MS, taskTime);
@@ -358,14 +388,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             //TODO Recieve data from backgroundservice
-            Log.d(TAG, "Broadcast reveiced from background service");
-
-
-            Log.d(TAG, "updateViews BroadcastReceiver");
+            // what data ?!?! (jane asks)
         }
     };
 
-    //TODO SLETTES???
+    //TODO SLETTES???  kun hvis det har indflydelse på noget der kører i forgrunden (jane)
     //Comes with a warning when the users presses the BACK button in MainActivity
     public void onBackPressed() {
         //Open messagebox
@@ -394,7 +421,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState (Bundle outState){
         Log.d(TAG, "onSaveInstanceState is called");
-        //outState.putString();
+        outState.putBoolean("USERPERMISSION", LOCATION_TRACKING_PERMITTED);
         super.onSaveInstanceState(outState);
     }
 
@@ -402,6 +429,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onRestoreInstanceState (Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
+        LOCATION_TRACKING_PERMITTED = savedInstanceState.getBoolean("USERPERMISSION",false);
         Log.d(TAG, "onRestoreInstanceState is called");
     }
 
