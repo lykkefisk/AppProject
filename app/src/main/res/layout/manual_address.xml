@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/parkButton"
+        android:id="@+id/saveManualButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="57dp"
@@ -15,7 +15,7 @@
         android:text="@string/saveButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Save" />
+         />
 
     <TextView
         android:id="@+id/address"
@@ -23,14 +23,13 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="18dp"
         android:layout_marginRight="18dp"
-        android:text="Address:"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBaseline_toBaselineOf="@+id/adressEditText"
         app:layout_constraintEnd_toStartOf="@+id/adressEditText"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        tools:text="Adress:" />
+        />
 
     <EditText
         android:id="@+id/adressEditText"
@@ -46,7 +45,7 @@
         app:layout_constraintBottom_toTopOf="@+id/no"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/address"
-        tools:text="Enter your address" />
+   />
 
     <TextView
         android:id="@+id/timeStampTextView"
@@ -58,7 +57,7 @@
         android:text="@string/timeStampTextView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Time" />
+       />
 
     <EditText
         android:id="@+id/noEditText"
@@ -74,7 +73,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/no"
         app:layout_constraintTop_toBottomOf="@+id/adressEditText"
-        tools:text="Enter no." />
+     />
 
     <TextView
         android:id="@+id/no"
@@ -89,7 +88,7 @@
         app:layout_constraintEnd_toStartOf="@+id/noEditText"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="No.:" />
+       />
 
     <EditText
         android:id="@+id/zipEditText"
@@ -105,7 +104,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/zip"
         app:layout_constraintTop_toBottomOf="@+id/cityEditText"
-        tools:text="Enter zipcode" />
+       />
 
     <TextView
         android:id="@+id/zip"
@@ -121,7 +120,7 @@
         app:layout_constraintEnd_toStartOf="@+id/zipEditText"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        tools:text="Zipcode:" />
+       />
 
     <TextView
         android:id="@+id/city"
@@ -136,7 +135,7 @@
         app:layout_constraintEnd_toStartOf="@+id/cityEditText"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/no"
-        tools:text="City:" />
+  />
 
     <EditText
         android:id="@+id/cityEditText"
@@ -151,7 +150,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/city"
         app:layout_constraintTop_toBottomOf="@+id/noEditText"
-        tools:text="Enter city" />
+      />
 
     <TextView
         android:id="@+id/country"
@@ -167,7 +166,7 @@
         app:layout_constraintEnd_toStartOf="@+id/countryEditText"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        tools:text="Country:" />
+   />
 
     <EditText
         android:id="@+id/countryEditText"
@@ -182,18 +181,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/country"
         app:layout_constraintTop_toBottomOf="@+id/zipEditText"
-        tools:text="Enter country" />
+       />
 
     <Button
-        android:id="@+id/cancelButton"
+        android:id="@+id/cancelManualButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="40dp"
         android:layout_marginStart="40dp"
         android:text="@string/cancelButton"
-        app:layout_constraintBottom_toBottomOf="@+id/parkButton"
+        app:layout_constraintBottom_toBottomOf="@+id/saveManualButton"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/parkButton"
-        tools:text="Cancel" />
+        app:layout_constraintTop_toTopOf="@+id/saveManualButton"
+         />
 
 </android.support.constraint.ConstraintLayout>

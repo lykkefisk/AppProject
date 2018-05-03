@@ -5,21 +5,20 @@ import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -51,15 +50,12 @@ public class FindActivity extends FragmentActivity implements IUpdateBackTrackin
     private static final float MIN_DISTANCE_MOVED_BETWEEN_LOCATION_UPDATES = 1;  // meters
     public static final String EXTRA_USER_LATITUDE = "location_latitude";
     public static final String EXTRA_USER_LONGITUDE = "location_longitude";
+    public static final int PERMISSIONS_REQUEST_LOCATION = 189;
 
     private double latitude, longitude;
     private Location userLocation;
     private LocationManager locationMng;
-    private Uri parkedLocation;
     private LocationListener notTheServiceLocationListener;
-
-    public static final int PERMISSIONS_REQUEST_LOCATION = 189;
-
 
     private BackTracker tracker;
     private ProgressDialog prDialog;
@@ -69,9 +65,9 @@ public class FindActivity extends FragmentActivity implements IUpdateBackTrackin
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(R.string.broadcast_action)) {
 
-                parkedLocation = intent.getData();
-                Intent viewmap = new Intent(Intent.ACTION_VIEW, parkedLocation);
-                viewmap.setPackage(getString(R.string.google_package));
+                // intent.getData holds a Uri object as one used for api calls
+                Intent viewmap = new Intent(Intent.ACTION_VIEW, intent.getData());
+                viewmap.setPackage("com.google.android.apps.maps");
 
                 if (viewmap.resolveActivity(getPackageManager()) != null) {
                     startActivity(viewmap);
@@ -99,6 +95,10 @@ public class FindActivity extends FragmentActivity implements IUpdateBackTrackin
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_find);
+
+     //   SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+       //         .findFragmentById(R.id.mapFragment);
+       // mapFragment.getMapAsync(this);
 
         // havent fixed this tracker yet
         // tracker = new BackTracker(this,"current", "parked");
@@ -144,6 +144,31 @@ public class FindActivity extends FragmentActivity implements IUpdateBackTrackin
 
     }
 
+    //TODO SLETTES???  kun hvis det har indflydelse på noget der kører i forgrunden (jane)
+    //Comes with a warning when the users presses the BACK button in MainActivity
+    public void onBackPressed() {
+        //Open messagebox
+        AlertDialog.Builder builder = new AlertDialog.Builder(FindActivity.this);
+        builder.setMessage(getString(R.string.note_back_pressed));
+        builder.setCancelable(true);
+
+        //Press ok and the app exits
+        builder.setPositiveButton("Close Map", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int id) {
+                // TODO more saving and control statements before finishing
+                finish(); //App exits
+            }
+        });
+        builder.setNegativeButton("Resume Tracking", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel(); //Cancel Exit
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
 
     // implements the interfaces for tracking back to car
     // TODO ..finish this another day

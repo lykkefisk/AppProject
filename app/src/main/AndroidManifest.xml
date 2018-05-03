@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.janesbrain.cartracker">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -10,7 +11,6 @@
  The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
          Google Maps Android API v2, but are recommended.
     -->
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
@@ -21,12 +21,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
-        <!-- see link below to obtain and configure use of google api
-            https://developers.google.com/maps/documentation/android-api/config    -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_map_key"/>
 
         <activity
             android:name=".MainActivity">
@@ -42,8 +36,6 @@
             </intent-filter>
 
         </activity>
-
-
         <service
             android:name=".CarService"
             android:enabled="true"
