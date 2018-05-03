@@ -20,6 +20,7 @@ import java.util.List;
 
 public class BackTracker {
 
+    // this class cannot access the Resource Files
     private static final String DIRECTION_URL_API = "https://maps.googleapis.com/maps/api/directions/json?";
     private static final String GOOGLE_MAP_KEY = "AIzaSyDztFAiqH3jsXPLAsLUwKBivQ6jpPLJl6Q";
 
@@ -27,9 +28,9 @@ public class BackTracker {
     private String origin;
     private String destination;
 
-    public BackTracker(IUpdateBackTracking host, String origin, String destination) {
+    public BackTracker(IUpdateBackTracking host, String livePosition, String destination) {
         this.listener = host;
-        this.origin = origin;
+        this.origin = livePosition;
         this.destination = destination;
     }
 

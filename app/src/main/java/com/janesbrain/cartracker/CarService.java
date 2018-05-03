@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 import com.janesbrain.cartracker.model.ParkingData;
 
 import java.net.URI;
+import java.util.Set;
 
 public class CarService extends Service {
     public static final String BROADCAST_BACKGROUND_SERVICE_RESULT = "com.janesbrain.cartracker.BROADCAST_BACKGROUND_SERVICE_RESULT";
@@ -33,10 +35,6 @@ public class CarService extends Service {
     private static final String TAG = "CAR_SERVICE";
     private static final String KEY_LONGITUDE = "LONGITUDE";
     private static final String KEY_LATITUDE = "LATITUDE";
-    private static final int NOTIFY_ID = 142;
-    private static final int Sleep1Min = 60 * 1000;
-    private static final int Sleep2Min = 2 * 60 * 1000;
-    private static final int Dist_Min = 1; // in metres
 
     private boolean started = false;
     private boolean isTracking = false;
@@ -47,10 +45,8 @@ public class CarService extends Service {
     private boolean runAsForegroundService = true;
     private LocationManager locationMng;
 
-
     // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
-
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
@@ -59,22 +55,17 @@ public class CarService extends Service {
     public LocationListener locListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
+            UpdateLocation(location);
             Log.d(TAG, "onLocationChanged called");
-            // maybe just save the location as a breadcrumb instead
-            // this should be the tracking service, I think (jane)
-            //UpdateLocation(location);
         }
-
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
 
         }
-
         @Override
         public void onProviderEnabled(String provider) {
 
         }
-
         @Override
         public void onProviderDisabled(String provider) {
 
@@ -92,6 +83,7 @@ public class CarService extends Service {
     @Override
     public void onCreate() {
         Log.d(TAG, "Background service onCreate");
+        SetupLocationManager();
     }
 
     //Copied from ServiceDemo
@@ -99,7 +91,7 @@ public class CarService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         //in this case we only start the background running loop once
         if (!started && intent != null) {
-            wait = intent.getLongExtra(EXTRA_TASK_TIME_MS, Sleep2Min);
+            wait = intent.getLongExtra(EXTRA_TASK_TIME_MS, R.integer.SLEEP_2minutes);
             Log.d(TAG, "Background service onStartCommand with wait: " + wait + "ms");
             started = true;
 
@@ -121,7 +113,7 @@ public class CarService extends Service {
                                 .setChannelId("myChannel")
                                 .build();
                 //calling Android to
-                startForeground(NOTIFY_ID, notification);
+                startForeground(R.integer.NOTIFY_ID, notification);
             }
         } else {
             Log.d(TAG, "Background service onStartCommand - already started!");
@@ -165,34 +157,19 @@ public class CarService extends Service {
     }
 
     //Copied from ArnieExercizeFinder
-    public String UpdateLocation(Location current) {
+    // this call is started from onLocationChanged, when the locationListener picks up a new position
+    public void UpdateLocation(Location current) {
 
         String status = "";
-
-        if (current == null) return null;
+        if (current == null) return;
         else {
 
             latitude = current.getLatitude();
             longitude = current.getLongitude();
-        }
-        if (locationMng != null) {
-            if (ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                //do nothing... her kommer den lille popup frem efter første klik.
-                Toast.makeText(this, "Need permission for location", Toast.LENGTH_LONG).show();
-            } else {
-                Location lastGps = locationMng.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                Location lastNetwork = locationMng.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                // TODO why is this done?!?! jane wonders again
-            }
-            /*
-            // NO REASON TO HAVE THE ACTIVITY STARTING
-            // WE JUST NEED TO SAVE THE LOCATION AS A "breadcrumb"
+            broadcastLocation(current);
 
+            // maybe this is a good idea instead
+            //broadcastLocation(current);
 
             // Create a Uri from an intent string. Use the result to create an Intent.
             Uri gmmIntentUri = Uri.parse("geo:" + String.valueOf(latitude) + "," + String.valueOf(longitude) + "?z=10");
@@ -200,24 +177,40 @@ public class CarService extends Service {
             // THE ACTION VIEW, MUST BE IN THE MANIFEST WITH A CLASS THAT HANDLES VIEW ACTIONS!!!! (JANE)
             Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
             // Make the Intent explicit by setting the Google Maps package
-            mapIntent.setPackage(getString(R.string.google_package));
+            mapIntent.setPackage("com.google.android.apps.maps");
             // Attempt to start an activity that can handle the Intent
             if (mapIntent.resolveActivity(getPackageManager()) != null) {
                 startActivity(mapIntent);
             }
-*/
 
-        } // end if: location manager is not null
-        else {
+            if (locationMng != null) {
+                if (ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED
+                        && ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    //do nothing... her kommer den lille popup frem efter første klik.
+                    Toast.makeText(this, "Need permission for location", Toast.LENGTH_LONG).show();
+                } else {
+                    Location lastGps = locationMng.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    Location lastNetwork = locationMng.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                    // TODO why is this done?!?! jane wonders again
 
-            // this cannot happen inside the service class
-            // we will loose the breadcrumbs, if it does
+                    // maybe this is where a broadcast to find activity
+                    // is supposed to be?? (jane wonders)
+
+                    // should we start the activity for map everytime there is a location update???
+                    // seems rather over the top, and battery draining for an app
+                }
+            } // end if: location manager is not null
+            else {
+                SetupLocationManager();
+                // I Guuess ???
+                // TODO anyone know why this is checked everytime the update is coming in??
+            }
         }
-
-        return status;
     }
-
-
 
     //Copied from ArnieExercizeFinder
     private String SetupLocationManager() {
@@ -234,10 +227,10 @@ public class CarService extends Service {
 
             if (locationMng != null) {
                 try {
-                    locationMng.requestLocationUpdates(60000, 1, criteria, locListener, null);
-                    status = "LocationManager is setup";
+                    locationMng.requestLocationUpdates(R.integer.SLEEP_1minute, R.integer.DISTANCE_1M , criteria, locListener, null);
+                    status = "LocationManager is setup with a listener";
                     Log.d("Main", status);
-                    //Use criteria to chose best provider
+
                 } catch (SecurityException ex) {
 
                     //TODO: user have disabled location permission - need to validate this permission for newer versions
@@ -257,5 +250,6 @@ public class CarService extends Service {
         }
         return status;
     }
+
 }
 
